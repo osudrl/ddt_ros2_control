@@ -109,6 +109,32 @@ protected:
     }
   };
 
+  DVec<tensor_element_t> actionReindex(DVec<tensor_element_t> & vec)
+  {
+    if (rl_params_->action_reindex.empty()) {
+      return vec;
+    } else {
+      DVec<tensor_element_t> vec_reindex = vec;
+      for (auto i = 0UL; i < rl_params_->action_reindex.size(); i++) {
+        vec_reindex[i] = vec[rl_params_->action_reindex[i]];
+      }
+      return vec_reindex;
+    }
+  };
+
+  DVec<tensor_element_t> actionReSign(DVec<tensor_element_t> & vec)
+  {
+    if (rl_params_->action_re_sign.empty()) {
+      return vec;
+    } else {
+      DVec<tensor_element_t> vec_re_sign = vec;
+      for (auto i = 0UL; i < rl_params_->action_re_sign.size(); i++) {
+        vec_re_sign[i] = rl_params_->action_re_sign[i] * vec[i];
+      }
+      return vec_re_sign;
+    }
+  };
+
   RLParameters * rl_params_;
   Observations obs_;
 

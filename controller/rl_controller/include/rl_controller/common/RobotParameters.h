@@ -92,6 +92,19 @@ struct RLParameters
   scalar_t output_torque_scale{1.0};
   std::vector<long int> reindex;
   std::vector<scalar_t> re_sign;
+  // Applied to the policy's raw action output before it is written to physical
+  // joint command slots. Separate from `reindex`/`re_sign` (which reorder
+  // observations into the policy's expected input layout) because some
+  // exported policies group actions by actuator type (e.g. all position-
+  // controlled leg joints, then all velocity-controlled wheel joints) rather
+  // than by physical joint order, while observations for the same policy may
+  // already be in physical order -- one shared permutation can't satisfy both.
+  std::vector<long int> action_reindex;
+  std::vector<scalar_t> action_re_sign;
+  // Some exported policies (plain single-frame MLPs) take one "obs" input
+  // tensor with no separate history input, unlike DDT's own history-encoder
+  // policies which take two. When false, only obs_vec_ is sent to the model.
+  bool use_obs_history_input{true};
   // scalar_t max_lin_vel_x{1.0}, max_lin_vel_y{1.0}, max_ang_vel_z{1.0};
 };
 struct RobotControlParameters

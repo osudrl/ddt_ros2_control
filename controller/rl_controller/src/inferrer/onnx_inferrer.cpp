@@ -41,8 +41,8 @@ bool ONNXInferrer::loadModel(const std::string & modelPath, bool verbose)
   outputShapes_.clear();
   // 遍历输入（将const char*转换为std::string存入基类inputNames_）
   for (size_t i = 0; i < policySessionPtr_->GetInputCount(); i++) {
-    const char * inputName = policySessionPtr_->GetInputName(i, allocator);  // 获取const char*
-    inputNames_.push_back(std::string(inputName));  // 转换为std::string存入基类
+    auto inputName = policySessionPtr_->GetInputNameAllocated(i, allocator);
+    inputNames_.push_back(std::string(inputName.get()));  // 转换为std::string存入基类
     inputShapes_.push_back(
       policySessionPtr_->GetInputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
     size_t size = 1;
@@ -53,8 +53,8 @@ bool ONNXInferrer::loadModel(const std::string & modelPath, bool verbose)
   }
   // 遍历输出（同理）
   for (size_t i = 0; i < policySessionPtr_->GetOutputCount(); i++) {
-    const char * outputName = policySessionPtr_->GetOutputName(i, allocator);  // 获取const char*
-    outputNames_.push_back(std::string(outputName));  // 转换为std::string存入基类
+    auto outputName = policySessionPtr_->GetOutputNameAllocated(i, allocator);
+    outputNames_.push_back(std::string(outputName.get()));  // 转换为std::string存入基类
     outputShapes_.push_back(
       policySessionPtr_->GetOutputTypeInfo(i).GetTensorTypeAndShapeInfo().GetShape());
     size_t size = 1;

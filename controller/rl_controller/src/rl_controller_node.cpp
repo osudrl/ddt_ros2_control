@@ -437,6 +437,12 @@ void RlController::update_control_parameters()
       policy_name + ".output_torque_scale", rl_params.output_torque_scale);
     get_node()->get_parameter<std::vector<long int>>(policy_name + ".reindex", rl_params.reindex);
     get_node()->get_parameter<std::vector<scalar_t>>(policy_name + ".re_sign", rl_params.re_sign);
+    get_node()->get_parameter<std::vector<long int>>(
+      policy_name + ".action_reindex", rl_params.action_reindex);
+    get_node()->get_parameter<std::vector<scalar_t>>(
+      policy_name + ".action_re_sign", rl_params.action_re_sign);
+    get_node()->get_parameter<bool>(
+      policy_name + ".use_obs_history_input", rl_params.use_obs_history_input);
   };
 
   for (auto policy_name : param->rl_policy_names) {
