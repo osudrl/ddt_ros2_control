@@ -196,7 +196,7 @@
       # entry predates the DDT-gains experiment and is stale relative to
       # mjlab_ext's current config).
       rl_mjlab_flat_v2:
-        policy_path: config/d1h/shkxv37e/policy.onnx
+        policy_path: config/d1h/gw9ogfom/policy.onnx
         output_name: "actions"
         use_obs_history_input: false  # onnx model takes a single "obs" input, no history tensor
 
