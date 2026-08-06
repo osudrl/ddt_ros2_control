@@ -1,0 +1,30 @@
+{
+  "configurations": [
+    {
+      "browse": {
+        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
+        "limitSymbolsToIncludedHeaders": false
+      },
+      "includePath": [
+        "/opt/ros/humble/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/controller/rl_controller/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/hardware/hardware_bridge/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/hardware/tita_robot/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/interaction/keyboard_controller/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/interaction/teleop_command/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/ros_utils/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/simulation/gazebo_bridge/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/simulation/mujoco_bridge/mujoco_ros2_control/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/simulation/mujoco_bridge/mujoco_sim_ros2/include/**",
+        "/home/bikram/workspace/ddt_ros2_control/simulation/webots_bridge/include/**",
+        "/usr/include/**"
+      ],
+      "name": "ros2",
+      "intelliSenseMode": "gcc-x64",
+      "compilerPath": "/usr/bin/gcc",
+      "cStandard": "gnu11",
+      "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}
