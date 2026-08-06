@@ -1,50 +1,50 @@
-# DDT 机器人 sim2sim/sim2real
-本仓库是一个基于 ROS 2 的多包工作空间，包含机器人控制器、硬件桥接、仿真桥接（`Mujoco` / `Gazebo` / `Webots`）、交互控制以及机器人模型描述。控制器支持基于有限状态机的策略，并可加载 ONNX 强化学习模型进行推理。
-同时提供 [Docker 镜像与启动说明](./docker/README.md)，将依赖与配置固化为可复现环境，便于快速部署、复现实验与跨设备一致运行（sim2sim）。
+# DDT Robot sim2sim/sim2real
+This repository is a ROS 2-based multi-package workspace containing robot controllers, hardware bridges, simulation bridges (`Mujoco` / `Gazebo` / `Webots`), interaction control, and robot model descriptions. The controller supports finite-state-machine-based policies and can load ONNX reinforcement learning models for inference.
+It also provides [Docker image and startup instructions](./docker/README.md), which lock down dependencies and configuration into a reproducible environment for quick deployment, experiment reproduction, and consistent cross-device operation (sim2sim).
 
-## 主要功能
-- 强化学习控制器（支持 ONNX 推理），基于有限状态机组织控制逻辑
-- `ros2_control` 硬件桥接，连接真实机器人驱动库
-- `Mujoco` / `Gazebo` / `Webots` 三种仿真环境桥接与示例世界
-- 键盘控制与遥控（ELRS）交互模块
-- 多机器人模型与描述（`tita`、`d1`(四轮足)、`d1h`(双轮足)）
+## Main Features
+- Reinforcement learning controller (with ONNX inference support), organizing control logic based on a finite state machine
+- `ros2_control` hardware bridge, connecting to the real robot driver library
+- Bridges and example worlds for three simulation environments: `Mujoco` / `Gazebo` / `Webots`
+- Keyboard control and remote control (ELRS) interaction modules
+- Multiple robot models and descriptions (`tita`, `d1` (four-wheel-legged), `d1h` (two-wheel-legged))
 
-## 目录结构
-- `controller/rl_controller`：基于`ros2_control`框架强化学习控制器
-- `hardware`：`hardware_bridge`为`ros2_control` 硬件桥接节点与启动文件，`tita_robot`真实机器人底层驱动接口
-- `interaction`：`keyboard_controller`键盘交互节点，`teleop_command`遥控手柄交互节点
-- `simulation`：`Mujoco`、`Gazebo`、`Webots` 仿真桥接
-- `ros_utils`: 主要为`ros`话题名称相关
-- `urdfs`：机器人模型描述文件（`URDF`/`XACRO`/`Mujoco`等）
+## Directory Structure
+- `controller/rl_controller`: Reinforcement learning controller based on the `ros2_control` framework
+- `hardware`: `hardware_bridge` contains the `ros2_control` hardware bridge node and launch files; `tita_robot` contains the low-level driver interface for the real robot
+- `interaction`: `keyboard_controller` keyboard interaction node, `teleop_command` remote controller interaction node
+- `simulation`: `Mujoco`, `Gazebo`, `Webots` simulation bridges
+- `ros_utils`: mainly related to `ros` topic names
+- `urdfs`: robot model description files (`URDF`/`XACRO`/`Mujoco`, etc.)
 
-## 注意事项
-在使用hardware之前，请检查当前d1-ros2 软件版本,使用`dpkg -l d1-ros2`指令检查，如果当前软件版本为4月01号的，则使用`compress_v1`分支代码，切记勿使用`main`分支，否则失控，同时使用前注意安全。以下`compress_v1`分支使用方法：
+## Notes
+Before using the hardware, check the current d1-ros2 software version with the `dpkg -l d1-ros2` command. If the current software version is from April 1st, use the `compress_v1` branch code — be sure not to use the `main` branch, or you will lose control. Also pay attention to safety before use. How to use the `compress_v1` branch:
 ```bash
 git clone https://github.com/DDTRobot/ddt_ros2_control/tree/compress_v1
 cd ddt_ros2_control
-#在编译hardware_bridge前，source /opt/d1-ros2/setup.bash
+#Before building hardware_bridge, source /opt/d1-ros2/setup.bash
 source /opt/d1_ros2/setup.bash 
-#确保前后机无其他ros2节点在运行，然后启动硬件运控服务
+#Make sure no other ros2 nodes are running on the robot, then start the hardware motion control service
 colcon build --symlink-install --packages-up-to rl_controller hardware_bridge
 sudo systemctl stop d1_bringup.service
 ros2 launch rl_controller hw.launch.py robot:=d1
 
 ```
-## 环境与依赖
-- 安装onnx推理引擎
+## Environment and Dependencies
+- Install the ONNX inference engine
 ``` bash 
-# 根据你的系统架构选择x64或者aarch64
+# Choose x64 or aarch64 depending on your system architecture
 wget https://github.com/microsoft/onnxruntime/releases/download/v1.10.0/onnxruntime-linux-x64-1.10.0.tgz
 tar xvf onnxruntime-linux-x64-1.10.0.tgz
 sudo cp -a onnxruntime-linux-x64-1.10.0/include/* /usr/include
 sudo cp -a onnxruntime-linux-x64-1.10.0/lib/* /usr/lib
 ```
 - Ubuntu 22.04, ros2 humble, gazebo classic, webots R2025a
-安装好ros2 humble后，安装以下依赖：
+After installing ros2 humble, install the following dependencies:
 ```bash
 sudo apt install ros-humble-ros2-control ros-humble-ros2-controllers
 ```
-- 根据需要安装仿真环境所需的依赖
+- Install the dependencies needed for the simulation environment(s) you need
 1. `webots`
 ```bash
 sudo apt install ros-humble-webots-ros2 ros-humble-webots-ros2-control
@@ -54,116 +54,116 @@ sudo apt install ros-humble-webots-ros2 ros-humble-webots-ros2-control
 sudo apt install ros-humble-gazebo-ros ros-humble-gazebo-ros2-control
 ```
 3. `mujoco`
-见下方构建部分
+See the Build section below
 
-## 构建
-以下命令展示了所有可行的编译命令，根据你的实际需要选择必要的组件进行编译。
+## Build
+The commands below show all possible build commands; choose the necessary components to build according to your actual needs.
 ```bash
-# 创建并进入工作空间
+# Create and enter the workspace
 mkdir -p ~/ddt_ros2_ws && cd ~/ddt_ros2_ws
-# 将本仓库放置于 ~/ddt_ros2_ws/
+# Place this repository in ~/ddt_ros2_ws/
 mv ddt_ros2 src
-# 如需使用mujoco，执行下方
+# If you need to use mujoco, run the following
 git clone -b 3.3.0 https://github.com/google-deepmind/mujoco.git
-# 构建
+# Build
 cd ~/ddt_ros2_ws
-# 编译rl_controller
+# Build rl_controller
 colcon build --symlink-install --packages-up-to rl_controller 
-# 编译仿真环境
-colcon build --symlink-install --packages-up-to webots_bridge # 可替换为gazebo_bridge， mujoco_bridge
-# 编译机器人模型描述
+# Build the simulation environment
+colcon build --symlink-install --packages-up-to webots_bridge # can be replaced with gazebo_bridge or mujoco_bridge
+# Build the robot model descriptions
 colcon build --symlink-install --packages-up-to d1_description d1h_description
-# 编译硬件桥接
+# Build the hardware bridge
 colcon build --symlink-install --packages-up-to hardware_bridge
-# 载入环境
+# Source the environment
 source install/setup.bash
 ```
 
-## 仿真运行
-- Webots 仿真（地形可选 `empty_world`、`stairs`、`uneven`）：
+## Running the Simulation
+- Webots simulation (terrain options: `empty_world`, `stairs`, `uneven`):
 ```bash
 ros2 launch rl_controller sim_webots.launch.py robot:=d1 terrain:=empty_world
 ```
-- Gazebo 仿真：
+- Gazebo simulation:
 ```bash
-ros2 launch rl_controller sim_gazebo.launch.py robot:=d1h # d1暂时加载不出来
+ros2 launch rl_controller sim_gazebo.launch.py robot:=d1h # d1 doesn't load correctly for now
 ```
-- Mujoco 仿真：
-在仿真`d1`时，需要手动将`d1h_description`中的`meshes`复制到`d1_description`中，并且修改`d1_description/CMakeLists.txt`中，将meshes注释取消。然后重新编译d1_description
+- Mujoco simulation:
+When simulating `d1`, you need to manually copy the `meshes` from `d1h_description` into `d1_description`, and uncomment the meshes section in `d1_description/CMakeLists.txt`. Then rebuild d1_description
 ```bashros2 launch rl_controller hw.launch.py robot:=d1
 
 ros2 launch rl_controller sim_mujoco.launch.py robot:=d1
 ```
 
-## 硬件运行
-硬件桥接依赖真实机器人驱动库（见 `hardware/tita_robot/lib/*/libtita_robot.so`）。需要将代码拷贝在机器上，需要配置硬件编译需要的环境，例如`colcon`后，再进行编译。
+## Running on Hardware
+The hardware bridge depends on the real robot driver library (see `hardware/tita_robot/lib/*/libtita_robot.so`). You need to copy the code onto the machine, set up the environment needed for hardware compilation, such as `colcon`, then build.
 ```bash
 sudo apt install python3-colcon-common-extensions
 ```
-编译运行在硬件上运行运动控制必要的包
+Build the packages necessary to run motion control on the hardware
 ```bash
 colcon build --symlink-install --packages-up-to rl_controller hardware_bridge
 ```
 
 
-- 启动控制器（硬件环境）：
-在启动有硬件环境的机器上，需要手动关闭已经启动的运控服务：
+- Start the controller (hardware environment):
+On a machine with a hardware environment set up, you need to manually stop the already-running motion control service:
 ```bash
 sudo systemctl stop d1_bringup.service 
 ```
 
-**如果运行在TITA上，需要注意：**
+**If running on TITA, please note:**
 
-TITA上电后运控板默认进入Ready Mode，需要运行此[start.bash](./start.bash)，让运控板进入 Direct mode
+After TITA powers on, the motion control board defaults to Ready Mode. You need to run [start.bash](./start.bash) to put the motion control board into Direct mode.
 
 
-确保无其他ros2节点在运行，然后启动硬件运控服务：
+Make sure no other ros2 nodes are running, then start the hardware motion control service:
 ```bash
 ros2 launch rl_controller hw.launch.py robot:=d1
 ```
 
-## 交互控制
-需编译下述功能包来启用键盘控制与遥控（ELRS）交互模块
+## Interaction Control
+Build the following packages to enable keyboard control and remote control (ELRS) interaction modules
 ```bash
 colcon build --symlink-install --packages-up-to teleop_command keyboard_controller 
 source install/setup.bash
 ```
 
-- 键盘控制：
+- Keyboard control:
 ```bash
 ros2 run keyboard_controller keyboard_controller_node
 ```
 
-- 遥控（ELRS）：
+- Remote control (ELRS):
 ```bash
 ros2 launch teleop_command teleop_command.launch.py
 ```
 
-## 控制器配置与模型
-- 控制器参数与模型位于：
+## Controller Configuration and Models
+- Controller parameters and models are located at:
   - `controller/rl_controller/config/<robot>/controllers.yaml`
-  - ONNX 模型示例：
+  - ONNX model examples:
     - `controller/rl_controller/config/tita/stand.onnx`
-    - `controller/rl_controller/config/d1/flat.onnx`、`stairs.onnx`
-- 更新控制策略时，修改对应 `controllers.yaml` 与 ONNX 文件路径
-- 状态机接口与实现：`controller/rl_controller/include/rl_controller/fsm/*` 与 `src/fsm/*`
+    - `controller/rl_controller/config/d1/flat.onnx`, `stairs.onnx`
+- When updating the control policy, modify the corresponding `controllers.yaml` and ONNX file paths
+- State machine interface and implementation: `controller/rl_controller/include/rl_controller/fsm/*` and `src/fsm/*`
 
 
-## 诊断与常见问题
-- Webots未找到：  的安装路径要在环境变量中，例如：
+## Diagnostics and FAQ
+- Webots not found: its installation path must be in the environment variables, for example:
 ```bash
 export WEBOTS_HOME=/usr/lib/webots
 ```
-- Mujoco 未找到：确认 `mujoco` 已安装并设置 `MUJOCO_DIR`
-- 控制器未加载：检查 `controller_manager` 日志与 `controllers.yaml` 配置。  
-- 模型描述加载失败：确认 `robot:=<name>` 与对应 `*_description` 包存在且可用
-- 如果在TITA上遇到如下编译问题，可以尝试把代码中黄框部分去掉
+- Mujoco not found: confirm `mujoco` is installed and `MUJOCO_DIR` is set
+- Controller not loading: check the `controller_manager` logs and `controllers.yaml` configuration.  
+- Model description fails to load: confirm `robot:=<name>` and the corresponding `*_description` package exist and are available
+- If you encounter the following build issue on TITA, try removing the part of the code highlighted in the yellow box
 ![bug1](/docker/bug1.png)
 
 ```
 #include "rl_controller/rl_controller_parameters.hpp"
-改成#include "rl_controller_parameters.hpp"
+change to #include "rl_controller_parameters.hpp"
 ```
 
-## 许可证
-各子包的许可证可能不同，请参考对应 `package.xml` 中的 `license` 字段。
+## License
+The license may differ for each sub-package; please refer to the `license` field in the corresponding `package.xml`.
