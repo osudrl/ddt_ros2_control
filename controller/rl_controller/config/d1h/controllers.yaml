@@ -77,6 +77,8 @@
       rl_policy_names:
         - "rl_flat"
         - "rl_squatdown"
+        - "rl_mjlab_flat"
+        - "rl_mjlab_flat_v2"
 
       rl_flat:
         policy_path: config/d1h/flat.onnx
@@ -134,3 +136,96 @@
 
         # Compensation items
         output_torque_scale: 1.0
+
+      # Trained in mjlab_ext (Mjlab-Velocity-Flat-DDT-D1H task), MLP actor,
+      # single-frame observation (no history encoder) -- see
+      # robot_learning/mjlab_ext/src/mjlab_ext/tasks/velocity/config/d1h/.
+      rl_mjlab_flat:
+        policy_path: config/d1h/zbg4gyrt/policy.onnx
+        output_name: "actions"
+        use_obs_history_input: false  # onnx model takes a single "obs" input, no history tensor
+
+        # env
+        num_obs: 31
+        num_actions: 8
+        history_len: 1
+        # order must match mjlab_ext's actor_obs dict insertion order exactly:
+        # ang_vel(3) + gravity(3) + dof_pos_nwp(6, legs only) + dof_vel(8) + last_actions(8) + commands(3) = 31
+        observations_name: ["ang_vel", "gravity", "dof_pos_nwp", "dof_vel", "last_actions", "commands"]
+        commands_name: ["lin_vel_x", "lin_vel_y", "ang_vel_z"]
+        commands_scale: [1.0, 1.0, 1.0]  # mjlab observes raw (unscaled) commanded twist
+        max_commands: [1.0, 1.0, 0.5]    # matches UniformVelocityCommandCfg.Ranges used in training
+        min_commands: [-1.0, -1.0, -0.5]
+        commands_comp: [0.0, 0.0, 0.0]
+        # control parameters
+        time_interval: 0.02  # decimation=4 * sim timestep=0.005s
+        control_type: "P_V"  # legs: position PD, wheels: velocity control (matches mjlab's action space)
+        default_joint_angles: [0.0, 0.8, -1.5, 0.0, 0.0, 0.8, -1.5, 0.0]
+        joint_kp: [60.0, 60.0, 60.0, 0.0, 60.0, 60.0, 60.0, 0.0]   # D1H_LEG_ACTUATOR_CFG.stiffness; wheel kp forced 0 in code
+        joint_kd: [1.5, 1.5, 1.5, 0.5, 1.5, 1.5, 1.5, 0.5]         # D1H_LEG_ACTUATOR_CFG.damping / D1H_WHEEL_ACTUATOR_CFG.damping
+
+        action_scales: [0.25, 0.25, 0.25, 5.0, 0.25, 0.25, 0.25, 5.0]  # D1H_ACTION_SCALE (legs) / D1H_WHEEL_VEL_SCALE (wheels)
+
+        # mjlab_ext's action tensor is grouped by actuator type: 6 leg
+        # position-actions (natural order FL_hip,FL_thigh,FL_calf,FR_hip,
+        # FR_thigh,FR_calf) followed by 2 wheel velocity-actions (FL_foot,
+        # FR_foot) -- NOT the physical per-leg joint order used by `joints:`
+        # above. action_reindex[i] = policy_output[R[i]] scatters the raw
+        # action into physical joint order before it's applied as a command.
+        # Deliberately independent of `reindex`/`re_sign` (unset, identity)
+        # above: pos/vel observations already match physical order with no
+        # remap needed, only the action vector does.
+        action_reindex: [0, 1, 2, 6, 3, 4, 5, 7]
+
+        lin_vel_scale: 1.0   # unused (no raw lin_vel obs term), kept for schema consistency
+        ang_vel_scale: 1.0   # mjlab observes raw (unscaled) gyro
+        dof_pos_scale: 1.0   # mjlab observes raw (unscaled, bias-subtracted) joint_pos
+        dof_vel_scale: 1.0   # mjlab observes raw (unscaled) joint_vel
+
+      # Same mjlab_ext obs/action convention as rl_mjlab_flat above (single-
+      # frame MLP, no history, action grouped-by-actuator-type then
+      # reindexed) -- trained under mjlab_ext's ddt_ros2_control-geometry
+      # config (robot_ddt.xml, restored DR incl. pd_gains/wheel_gains/
+      # add_base_mass/joint_friction/joint_damping/command-delay), NOT
+      # rl_mjlab_flat's original mjlab_ext geometry/gains. Verified via
+      # onnxruntime introspection: identical I/O shape to rl_mjlab_flat
+      # (obs [1,31] -> actions [1,8]), so the obs/action *composition* is
+      # unchanged -- only the gains below differ (current
+      # D1H_LEG_ACTUATOR_CFG/D1H_WHEEL_ACTUATOR_CFG values at training time,
+      # 40.0/1.2 legs and 0.6 wheel, not rl_mjlab_flat's 60.0/1.5 -- that
+      # entry predates the DDT-gains experiment and is stale relative to
+      # mjlab_ext's current config).
+      rl_mjlab_flat_v2:
+        policy_path: config/d1h/shkxv37e/policy.onnx
+        output_name: "actions"
+        use_obs_history_input: false  # onnx model takes a single "obs" input, no history tensor
+
+        # env
+        num_obs: 31
+        num_actions: 8
+        history_len: 1
+        # order must match mjlab_ext's actor_obs dict insertion order exactly:
+        # ang_vel(3) + gravity(3) + dof_pos_nwp(6, legs only) + dof_vel(8) + last_actions(8) + commands(3) = 31
+        observations_name: ["ang_vel", "gravity", "dof_pos_nwp", "dof_vel", "last_actions", "commands"]
+        commands_name: ["lin_vel_x", "lin_vel_y", "ang_vel_z"]
+        commands_scale: [1.0, 1.0, 1.0]  # mjlab observes raw (unscaled) commanded twist
+        max_commands: [1.0, 1.0, 0.5]    # matches UniformVelocityCommandCfg.Ranges used in training
+        min_commands: [-1.0, -1.0, -0.5]
+        commands_comp: [0.0, 0.0, 0.0]
+        # control parameters
+        time_interval: 0.02  # decimation=4 * sim timestep=0.005s
+        control_type: "P_V"  # legs: position PD, wheels: velocity control (matches mjlab's action space)
+        default_joint_angles: [0.0, 0.8, -1.5, 0.0, 0.0, 0.8, -1.5, 0.0]
+        joint_kp: [40.0, 40.0, 40.0, 0.0, 40.0, 40.0, 40.0, 0.0]    # D1H_LEG_ACTUATOR_CFG.stiffness; wheel kp forced 0 in code
+        joint_kd: [1.2, 1.2, 1.2, 0.6, 1.2, 1.2, 1.2, 0.6]          # D1H_LEG_ACTUATOR_CFG.damping / D1H_WHEEL_ACTUATOR_CFG.damping
+
+        action_scales: [0.25, 0.25, 0.25, 5.0, 0.25, 0.25, 0.25, 5.0]  # D1H_ACTION_SCALE (legs) / D1H_WHEEL_VEL_SCALE (wheels) -- unchanged from rl_mjlab_flat
+
+        # Same grouping as rl_mjlab_flat -- see that entry's comment above
+        # for the full explanation of why this reindex is needed.
+        action_reindex: [0, 1, 2, 6, 3, 4, 5, 7]
+
+        lin_vel_scale: 1.0   # unused (no raw lin_vel obs term), kept for schema consistency
+        ang_vel_scale: 1.0   # mjlab observes raw (unscaled) gyro
+        dof_pos_scale: 1.0   # mjlab observes raw (unscaled, bias-subtracted) joint_pos
+        dof_vel_scale: 1.0   # mjlab observes raw (unscaled) joint_vel
