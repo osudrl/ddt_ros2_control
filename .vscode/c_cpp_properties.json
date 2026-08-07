@@ -1,10 +1,6 @@
 {
   "configurations": [
     {
-      "browse": {
-        "databaseFilename": "${workspaceFolder}/.vscode/browse.vc.db",
-        "limitSymbolsToIncludedHeaders": false
-      },
       "includePath": [
         "/opt/ros/humble/include/**",
         "/home/bikram/workspace/ddt_ros2_control/controller/rl_controller/include/**",
