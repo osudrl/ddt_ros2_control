@@ -400,8 +400,12 @@ void RlController::update_control_parameters()
   // RLParameters
   auto get_policy_params = [this](const std::string & policy_name, RLParameters & rl_params) {
     get_node()->get_parameter<std::string>(policy_name + ".policy_path", rl_params.policy_path);
-    rl_params.policy_path =
-      ament_index_cpp::get_package_share_directory("rl_controller") + "/" + rl_params.policy_path;
+    // absolute paths (e.g. pointing straight at a training log dir) are used
+    // as-is; relative paths resolve against the package share directory
+    if (!rl_params.policy_path.empty() && rl_params.policy_path.front() != '/') {
+      rl_params.policy_path =
+        ament_index_cpp::get_package_share_directory("rl_controller") + "/" + rl_params.policy_path;
+    }
     get_node()->get_parameter<std::string>(policy_name + ".output_name", rl_params.output_name);
     get_node()->get_parameter<std::string>(policy_name + ".policy_type", rl_params.policy_type);
     // env

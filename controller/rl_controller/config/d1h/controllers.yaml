@@ -79,6 +79,7 @@
         - "rl_squatdown"
         - "rl_mjlab_flat"
         - "rl_mjlab_flat_v2"
+        - "rl_mjlab_flat_v3"
 
       rl_flat:
         policy_path: config/d1h/flat.onnx
@@ -218,6 +219,41 @@
         default_joint_angles: [0.0, 0.8, -1.5, 0.0, 0.0, 0.8, -1.5, 0.0]
         joint_kp: [40.0, 40.0, 40.0, 0.0, 40.0, 40.0, 40.0, 0.0]    # D1H_LEG_ACTUATOR_CFG.stiffness; wheel kp forced 0 in code
         joint_kd: [1.2, 1.2, 1.2, 0.6, 1.2, 1.2, 1.2, 0.6]          # D1H_LEG_ACTUATOR_CFG.damping / D1H_WHEEL_ACTUATOR_CFG.damping
+
+        action_scales: [0.25, 0.25, 0.25, 5.0, 0.25, 0.25, 0.25, 5.0]  # D1H_ACTION_SCALE (legs) / D1H_WHEEL_VEL_SCALE (wheels) -- unchanged from rl_mjlab_flat
+
+        # Same grouping as rl_mjlab_flat -- see that entry's comment above
+        # for the full explanation of why this reindex is needed.
+        action_reindex: [0, 1, 2, 6, 3, 4, 5, 7]
+
+        lin_vel_scale: 1.0   # unused (no raw lin_vel obs term), kept for schema consistency
+        ang_vel_scale: 1.0   # mjlab observes raw (unscaled) gyro
+        dof_pos_scale: 1.0   # mjlab observes raw (unscaled, bias-subtracted) joint_pos
+        dof_vel_scale: 1.0   # mjlab observes raw (unscaled) joint_vel      
+        
+      rl_mjlab_flat_v3:
+        policy_path: /home/bikram/workspace/robot_learning/logs/rsl_rl/d1h_velocity/wandb_checkpoints/yecgqpx3/policy.onnx
+        output_name: "actions"
+        use_obs_history_input: false  # onnx model takes a single "obs" input, no history tensor
+
+        # env
+        num_obs: 31
+        num_actions: 8
+        history_len: 1
+        # order must match mjlab_ext's actor_obs dict insertion order exactly:
+        # ang_vel(3) + gravity(3) + dof_pos_nwp(6, legs only) + dof_vel(8) + last_actions(8) + commands(3) = 31
+        observations_name: ["ang_vel", "gravity", "dof_pos_nwp", "dof_vel", "last_actions", "commands"]
+        commands_name: ["lin_vel_x", "lin_vel_y", "ang_vel_z"]
+        commands_scale: [1.0, 1.0, 1.0]  # mjlab observes raw (unscaled) commanded twist
+        max_commands: [1.0, 1.0, 0.5]    # matches UniformVelocityCommandCfg.Ranges used in training
+        min_commands: [-1.0, -1.0, -0.5]
+        commands_comp: [0.0, 0.0, 0.0]
+        # control parameters
+        time_interval: 0.02  # decimation=4 * sim timestep=0.005s
+        control_type: "P_V"  # legs: position PD, wheels: velocity control (matches mjlab's action space)
+        default_joint_angles: [0.0, 0.8, -1.5, 0.0, 0.0, 0.8, -1.5, 0.0]
+        joint_kp: [60.0, 60.0, 60.0, 0.0, 60.0, 60.0, 60.0, 0.0]    # D1H_LEG_ACTUATOR_CFG.stiffness; wheel kp forced 0 in code
+        joint_kd: [1.5, 1.5, 1.5, 0.6, 1.5, 1.5, 1.5, 0.6]          # D1H_LEG_ACTUATOR_CFG.damping / D1H_WHEEL_ACTUATOR_CFG.damping
 
         action_scales: [0.25, 0.25, 0.25, 5.0, 0.25, 0.25, 0.25, 5.0]  # D1H_ACTION_SCALE (legs) / D1H_WHEEL_VEL_SCALE (wheels) -- unchanged from rl_mjlab_flat
 
