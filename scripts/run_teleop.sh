@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Drives the sim via raw topic pub, matching the known-working manual sequence:
 # transform up -> switch to a policy -> stream a forward velocity command.
-POLICY="${1:-rl_3}"          # rl_2 = rl_mjlab_flat (see controllers.yaml rl_policy_names)
+POLICY="${1:-rl_4}"          # rl_2 = rl_mjlab_flat (see controllers.yaml rl_policy_names)
 FORWARD_VEL="${2:-0.3}"
 
 COLCON_WS="$HOME/d1_ws"
